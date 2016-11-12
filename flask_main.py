@@ -2,7 +2,6 @@ import flask
 from flask import render_template
 from flask import request
 from flask import url_for
-from flask import jsonify # For AJAX transactions
 import uuid
 import time
 
@@ -58,11 +57,11 @@ def index():
 
 @app.route("/choose")
 def choose():
-    flask.session['primary_cals'] = []
     ## We'll need authorization to list calendars
     ## I wanted to put what follows into a function, but had
     ## to pull it back here because the redirect has to be a
     ## 'return'
+    flask.session['primary_cals'] = []
     app.logger.debug("Checking credentials for Google calendar access")
     credentials = valid_credentials()
     if not credentials:
@@ -72,15 +71,12 @@ def choose():
     gcal_service = get_gcal_service(credentials)
     app.logger.debug("Returned from get_gcal_service")
     flask.g.calendars = list_calendars(gcal_service)
-    app.logger.debug("callllllll: {}".format(flask.g.calendars))
     return render_template('index.html')
 
 @app.route("/list_chosen")
 def list_chosen():
     result = []
     cal_ids = flask.session['primary_cals']
-    app.logger.debug("primary_cals{}".format(flask.session['primary_cals']))
-    app.logger.debug("len:{}".format(len(cal_ids)))
     for i in range(len(cal_ids)):
         app.logger.debug("Checking credentials for Google calendar access")
         credentials = valid_credentials()
@@ -92,9 +88,7 @@ def list_chosen():
         eventsResult = gcal_service.events().list(
             calendarId=flask.session['primary_cals'][i], timeMin=flask.session["begin_date_time"], timeMax=flask.session["end_date_time"],maxResults=100, singleEvents=True,
             orderBy='startTime').execute()
-        app.logger.debug("eventsResult:{}".format(eventsResult))
         events = eventsResult.get('items', [])
-        app.logger.debug("events:{}".format(events))
 
 
         if not events:
@@ -104,9 +98,6 @@ def list_chosen():
             start = event['start'].get('dateTime', event['start'].get('date'))
             end = event['end'].get('dateTime', event['end'].get('date'))
 
-            app.logger.debug("events[summary]:{}".format(event['summary']))
-            app.logger.debug("start:{}".format(start))
-            app.logger.debug("end:{}".format(end))
 
             result.append(
               { #"kind": kind,
@@ -118,68 +109,31 @@ def list_chosen():
                 #"primary": primary
                 })
 
-    app.logger.debug("result:{}".format(result))
     result = sorted(result, key=lambda k: k['start'])
     flask.g.cal_list = result
-    #flask.session['primary_cals'] = []
     return render_template('index.html')
 
 @app.route("/_add_primary")
 def add_primary():
     id = request.args.get('id', 0, type=str)
-    app.logger.debug("query{}".format(flask.session['query_cal']))
-    #flask.session['query_cal'] = flask.session['query_cal'].remove(id)
-    app.logger.debug("primary_cals{}".format(flask.session['primary_cals']))
     for i in flask.session['query_cal']:
         if i.get('id') == id:
             new_id = str(i.get('id'))
             flask.session["primary_cals"].append(new_id)
 
-    app.logger.debug("primary_cals{}".format(flask.session['primary_cals']))
+    #app.logger.debug("primary_cals{}".format(flask.session['primary_cals']))
     return render_template('index.html')
 
 @app.route("/_remove_primary")
 def remove_primary():
     id = request.args.get('id', 0, type=str)
-    app.logger.debug("query{}".format(flask.session['query_cal']))
-    #flask.session['query_cal'] = flask.session['query_cal'].remove(id)
     app.logger.debug("primary_cals{}".format(flask.session['primary_cals']))
     for i in flask.session['query_cal']:
         if i.get('id') == id:
             new_id = str(i.get('id'))
             flask.session["primary_cals"].remove(new_id)
 
-    app.logger.debug("primary_cals{}".format(flask.session['primary_cals']))
-    return render_template('index.html')
-
-@app.route("/_begin_time_set")
-def begin_time_set():
-    begin_value = request.args.get('begin_value', 0, type=str)
-    flask.session['begin_time'] = interpret_time(begin_value)
-    app.logger.debug("begin{}".format(flask.session['begin_time']))
-
-    a = arrow.get(flask.session['begin_date'])
-    app.logger.debug("test time:::::::{}".format(a.isoformat()))
-    begin_date_time = arrow.get(flask.session['begin_time'])
-    app.logger.debug("test time:::::::{}".format(begin_date_time.isoformat()))
-    begin_date_time = begin_date_time.replace(year=a.year,month=a.month, day=a.day)
-    app.logger.debug("test time:::::::{}".format(begin_date_time.isoformat()))
-    flask.session['begin_date_time'] = begin_date_time.isoformat()
-    return render_template('index.html')
-
-@app.route("/_end_time_set")
-def end_time_set():
-    end_value = request.args.get('end_value', 0, type=str)
-    flask.session['end_time'] = interpret_time(end_value)
-    app.logger.debug("end{}".format(flask.session['end_time']))
-
-    b = arrow.get(flask.session['end_date'])
-    app.logger.debug("test time:::::::{}".format(b.isoformat()))
-    end_date_time = arrow.get(flask.session['end_time'])
-    app.logger.debug("test time:::::::{}".format(end_date_time.isoformat()))
-    end_date_time = end_date_time.replace(year=b.year,month=b.month, day=b.day)
-    app.logger.debug("test time:::::::{}".format(end_date_time.isoformat()))
-    flask.session['end_date_time'] = end_date_time.isoformat()
+    #app.logger.debug("primary_cals{}".format(flask.session['primary_cals']))
     return render_template('index.html')
 
 
@@ -321,20 +275,15 @@ def setrange():
     app.logger.debug("Setrange parsed {} - {}  dates as {} - {}".format(
       daterange_parts[0], daterange_parts[1],
       flask.session['begin_date'], flask.session['end_date']))
+
     a = arrow.get(flask.session['begin_date'])
-    app.logger.debug("test time:::::::{}".format(a.isoformat()))
     begin_date_time = arrow.get(flask.session['begin_time'])
-    app.logger.debug("test time:::::::{}".format(begin_date_time.isoformat()))
     begin_date_time = begin_date_time.replace(year=a.year,month=a.month, day=a.day)
-    app.logger.debug("test time:::::::{}".format(begin_date_time.isoformat()))
     flask.session['begin_date_time'] = begin_date_time.isoformat()
 
     b = arrow.get(flask.session['end_date'])
-    app.logger.debug("test time:::::::{}".format(b.isoformat()))
     end_date_time = arrow.get(flask.session['end_time'])
-    app.logger.debug("test time:::::::{}".format(end_date_time.isoformat()))
     end_date_time = end_date_time.replace(year=b.year,month=b.month, day=b.day)
-    app.logger.debug("test time:::::::{}".format(end_date_time.isoformat()))
     flask.session['end_date_time'] = end_date_time.isoformat()
 
     return flask.redirect(flask.url_for("choose"))
@@ -354,17 +303,15 @@ def init_session_values():
     now = arrow.now('local')     # We really should be using tz from browser
     tomorrow = now.replace(days=+1)
     nextweek = now.replace(days=+7)
+
     flask.session["begin_date"] = tomorrow.floor('day').isoformat()
-    app.logger.debug("begin_date{}".format(flask.session["begin_date"]))
     flask.session["end_date"] = nextweek.ceil('day').isoformat()
     flask.session["daterange"] = "{} - {}".format(
         tomorrow.format("MM/DD/YYYY"),
         nextweek.format("MM/DD/YYYY"))
     # Default time span each day, 8 to 5
     flask.session["begin_time"] = interpret_time("10am")
-    app.logger.debug("begin_time{}".format(flask.session["begin_time"]))
     flask.session["end_time"] = interpret_time("5pm")
-    app.logger.debug("end_time{}".format(flask.session["end_time"]))
     flask.session["primary_cals"] = []
 
 
@@ -460,8 +407,6 @@ def list_calendars(service):
         query_cal.append({ "id" : id })
 
     flask.session['query_cal'] = query_cal
-    app.logger.warning("result: {}".format(result))
-    app.logger.warning("key: {}".format(cal_sort_key))
     return sorted(result, key=cal_sort_key)
 
 

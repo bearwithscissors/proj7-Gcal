@@ -51,5 +51,20 @@ Whether or not you already have a Google calendar, it's a good idea to
 create one or two 'test' calendars with a known set of appointments
 for testing.
 
+## How to Run the Code
+You may start configuring the code by doing the following.
 
+```
+	bash ./configure
+	make test    # All tests should pass
+	make service # Then I test from browser on another machine
+```
+
+
+If you have issues with the service you can stop the service by typing the following:
+```
+	ps -e | grep gunicorn #Find the PID for gunicorn
+	kill -9 pid #where pid is the process id returned by the last command
+	make service
+```
 

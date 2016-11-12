@@ -60,16 +60,22 @@
 
   <h3 id="begin_time">Start Time</h3>
   <input type=time name="begin_time" id="begin_time"
+
   {% if session.begin_time is defined %}
        value="{{session.begin_time | fmttime}}"
   {% endif %}
+
    style="background: #fff; cursor: pointer; padding: 5px 10px;
   border: 1px solid #ccc; width: 12em"  />
+
+
   <h3 id="end_time">End Time</h3>
   <input type=time name="end_time" id="end_time"
+
   {% if session.end_time is defined %}
        value="{{session.end_time | fmttime}}"
   {% endif %}
+  
   style="background: #fff; cursor: pointer; padding: 5px 10px;
   border: 1px solid #ccc; width: 12em"  />
 
@@ -172,26 +178,10 @@ function getTimes(){
 }
 function remove(cb){
   if(cb.checked == true){
-  console.log(cb.value);
-  add_primary(cb.value);
-  /*var all;
-  var checked;
-  var idCount = 0;
-  var loop = true;
-  all = $("input:checkbox");
-  checked = all.filter(":checked");
-  var checkedIds = checked.map(function(){
-    return this.value;
-  });
-  console.log(checkedIds);
-  console.log(checkedIds.length);
-  for(i=0; i<checkedIds.length; i++){
-    console.log(checkedIds[i]);
-    add_primary(checkedIds[i]);*/
-
+  //console.log(cb.value);
+    add_primary(cb.value);
  }else{
-   //TODO make this function
-   console.log(cb.value);
+   //console.log(cb.value);
    remove_primary(cb.value);
  }
 }
